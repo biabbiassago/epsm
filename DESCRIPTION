@@ -1,0 +1,25 @@
+Package: epsm
+Type: Package
+Title: Extremal Preferential Sampling Models
+Version: 0.1.0
+Authors@R: 
+    person("Bianca", "Brusco", email = "bbrusco@uci.edu",
+           role = c("aut", "cre"))
+Description: Bayesian hierarchical models for preferentially sampled spatial
+    and space-time extremes. Includes non-preferential baseline models for comparison.
+License: MIT + file LICENSE
+Imports:
+    coda,
+    FastGP,
+    fields,
+    MASS,
+    purrr,
+    spatstat.geom,
+    spatstat.random,
+    stats,
+    utils
+Suggests:
+    SpatialExtremes
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.0.0
