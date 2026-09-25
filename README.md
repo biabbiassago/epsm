@@ -27,7 +27,7 @@ The folder `data-analysis` contains the data and the code to fit the models appl
 
 ### Examples
 
-- [Fitting models Example Vignette]((https://github.com/biabbiassago/epsm/blob/main/vignettes/example-fits.md)
+- [Fitting models Example Vignette](https://github.com/biabbiassago/epsm/blob/main/vignettes/example-fits.md)
 - `inst/scripts/example.R`
   
   
