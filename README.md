@@ -23,7 +23,12 @@ The folder `data-analysis` contains the data and the code to fit the models appl
   - `R/predictive-utils.R`: functions to generate posterior predictive/ posterior distributions.  
   - `R/attainment-analysis.R` : reproduce NAAQS attainment analysis   
   - `results` : a thinned version of the MCMC used in the analysis.   
-  
+
+
+### Examples
+
+- [Fitting models Example Vignette]([https://google.com](https://github.com/biabbiassago/epsm/blob/main/vignettes/example-fits.md)
+- `inst/scripts/example.R`
   
   
  
