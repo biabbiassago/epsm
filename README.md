@@ -21,8 +21,7 @@ The folder `data-analysis` contains the data and the code to fit the models appl
   - `R/mod1-posteriorpreds.R` : generate predictive distributions for preferential model.  
   - `R/modb1-base-posteriorpreds.R` : generate predictive distributions for baseline model.  
   - `R/predictive-utils.R`: functions to generate posterior predictive/ posterior distributions.  
-  - `R/attainment-analysis.R` : reproduce NAAQS attainment analysis   
-  - `results` : a thinned version of the MCMC used in the analysis.   
+  - `R/attainment-analysis.R` : reproduce NAAQS attainment analysis      
 
 
 ### Examples
