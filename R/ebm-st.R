@@ -204,7 +204,7 @@ ebm_st_mcmc <-
     }
     rho_S_acc_rate <- c(1)
 
-    ## omega is the persistent, per-year whitened state: S_j(s) =
+    ## omega is from the decomposition: S_j(s) =
     ## sqrt(sigma2_S) * omega_j(s), with omega_j(.) | rho_S ~
     ## GP(0, R_j(.; rho_S)) (unit sill). S_n (below) is the natural-scale
     ## reconstruction, kept for storage/output and for nu/xi's likelihoods.

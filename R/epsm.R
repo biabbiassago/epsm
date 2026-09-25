@@ -11,8 +11,8 @@
 #' For observation \eqn{i} at station \eqn{s_i} in period \eqn{t_i}:
 #' \deqn{Y_i \sim \mathrm{bGEV}(\eta_{t_i} + S(s_i),\ \exp(\nu_{t_i}),\ \xi)}
 #' where the bGEV is parameterised by median (location), spread (scale, on
-#' the log scale \eqn{\nu}) and shape \eqn{\xi}. The field is partially
-#' whitened, \eqn{S(s) = \sigma_S\,\omega(s)} with
+#' the log scale \eqn{\nu}) and shape \eqn{\xi}. The field is decomposed as
+#' \eqn{S(s) = \sigma_S\,\omega(s)} with
 #' \eqn{\omega \mid \rho_S \sim GP(0, R(\cdot;\rho_S))} (exponential
 #' correlation, unit sill). Observed locations are the retained points of a
 #' thinned Poisson process on `set_window` with dominating intensity
@@ -329,7 +329,7 @@ epsm_mcmc <-
 
       # Step 2: Simulate Discarded Locations. Works entirely on the
       # correlation (omega) scale -- sigma2_S never enters the augmentation
-      # or thinning step under partial whitening.
+      # or thinning step dcecomposition
       all_coords_prev <- all_coords
       all_coords_tmp <-
         sample_all_coords(
