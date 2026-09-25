@@ -1,7 +1,7 @@
 #' Extremes Baseline Model (EBM) for Spatial Extremes
 #'
 #' Fits the non-preferential comparison model for [epsm_mcmc()]: a bGEV
-#' model for block maxima (or minima) with a latent Gaussian process on the
+#' model for maxima (or minima) with a latent Gaussian process on the
 #' median, but **no** point process for the station locations (no
 #' \eqn{\beta}, no \eqn{\lambda^*}). Station locations are treated as fixed
 #' and uninformative. Single period only: one \eqn{\eta}, one \eqn{\nu}, one
