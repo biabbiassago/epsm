@@ -14,8 +14,8 @@
 #' the log scale \eqn{\nu}) and shape \eqn{\xi}. The field is decomposed as
 #' \eqn{S(s) = \sigma_S\,\omega(s)} with
 #' \eqn{\omega \mid \rho_S \sim GP(0, R(\cdot;\rho_S))} (exponential
-#' correlation, unit sill). Observed locations are the retained points of a
-#' thinned Poisson process on `set_window` with dominating intensity
+#' correlation). Observed locations are the retained points of a
+#' thinned Poisson process on `set_window` with intensity
 #' \eqn{\lambda^*}; the retention probability depends on
 #' \eqn{\beta\,\omega(s)}, so \eqn{\beta} measures the strength of
 #' preferential sampling (\eqn{\beta = 0}: no preferential sampling).
@@ -27,14 +27,9 @@
 #'
 #'
 #' @section Sampler:
-#' Each iteeration: (1) Gibbs update of \eqn{\lambda^*}; (2) simulate the
-#' thinned-out (unobserved) locations; (3) joint elliptical slice update of
-#' \eqn{(\eta, \omega)}; (4) adaptive MH for \eqn{\nu} (per period) and
-#' \eqn{\xi}; (5) adaptive MH for \eqn{\sigma^2_S} and \eqn{\rho_S};
-#' (6) adaptive MH for \eqn{\beta}; (7) optional kriging of \eqn{S} to
-#' `pred_coords`.
+#' TODO
 #'
-#' @param y Numeric vector of length \eqn{N}. Responses (block maxima/minima),
+#' @param y Numeric vector of length \eqn{N}. Responses,
 #'   one per station-period observation.
 #' @param obs_coords \eqn{n \times 2} numeric matrix of observed station
 #'   coordinates. Must lie inside `set_window`.
@@ -42,7 +37,7 @@
 #'   `obs_coords` of the station each element of `y` was recorded at. Must
 #'   take values in `1:nrow(obs_coords)` and use every station at least once.
 #' @param nsims Integer. Number of MCMC iterations (including the initial
-#'   state; no burn-in or thinning is applied).
+#'   burnin).
 #' @param years Optional vector of length \eqn{N} giving the time period of
 #'   each observation. If `NULL`, all observations are treated as one period
 #'   (a single \eqn{\eta} and \eqn{\nu}). Otherwise one \eqn{(\eta_t, \nu_t)}
@@ -60,8 +55,8 @@
 #'   to the unit square \eqn{[0,1]^2}. Note: the \eqn{\lambda^*} update
 #'   currently assumes a window of area 1.
 #' @param initial_values Optional named list of starting values; any element
-#'   omitted (or `initial_values = NULL`) is initialised at random.
-#'   Recognised names:
+#'   omitted (or `initial_values = NULL`) is initialized at random.
+#'   Recognized names:
 #'   \describe{
 #'     \item{`lambda_star`}{Scalar, Point process intensity.}
 #'     \item{`beta`}{Scalar, preferential-sampling coefficient.}
@@ -274,7 +269,7 @@ epsm_mcmc <-
     dist_all_coords <- fields::rdist(all_coords)
 
     ## GEV Random Effects on Median. omega is the decomposed S(s) = sqrt(sigma2_S) * omega(s), with
-    ## omega(.) | rho_S ~ GP(0, R(.; rho_S)), unit sill). S_k / S_n are
+    ## omega(.) | rho_S ~ GP(0, R(.; rho_S))). S_k / S_n are
     ## reconstructed from omega whenever the natural-scale field is
     ## needed (storage, nu/xi, kriging)
     R_S <-
@@ -327,9 +322,7 @@ epsm_mcmc <-
           area_B = 1
         )
 
-      # Step 2: Simulate Discarded Locations. Works entirely on the
-      # correlation (omega) scale -- sigma2_S never enters the augmentation
-      # or thinning step dcecomposition
+      # Step 2: Simulate Discarded Locations. 
       all_coords_prev <- all_coords
       all_coords_tmp <-
         sample_all_coords(
@@ -352,13 +345,10 @@ epsm_mcmc <-
       }
 
       # Build the field's correlation matrix and factorise it ONCE per iteration.
-      # The same factor is shared by the joint (eta, omega) elliptical slice
-      # update and the rho_S update.
       chol_R_S <- chol_field_factor(all_coords, rho_S[i - 1])
 
       # Step 3: joint elliptical slice update of (eta, omega) at all
-      # locations. (Replaces the old field-only ESS step plus the
-      # separate eta Metropolis step).
+      # locations.
       ess_tmp <-
         sample_eta_S_ess(
           eta_cur = eta[, i - 1],
