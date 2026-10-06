@@ -62,9 +62,6 @@ make_sim_data_max_stations <-
     n <- dim(obs_coords)[1]
 
     ## subset_coords
-    # idx_pred holds ORIGINAL point indices (previously, with large = TRUE,
-    # it held positions within the unobserved subset, so S was taken from the
-    # wrong points).
     idx_pred <- which(!(seq_len(k_true) %in% idx_keep))
     if (large == T && length(idx_pred) > 150) {
       idx_pred <- idx_pred[sample(length(idx_pred), 150)]
@@ -207,9 +204,6 @@ make_sim_data_max_years <-
     n <- dim(obs_coords)[1]
 
     ## subset_coords
-    # idx_pred holds ORIGINAL point indices (previously, with large = TRUE,
-    # it held positions within the unobserved subset, so S was taken from the
-    # wrong points).
     idx_pred <- which(!(seq_len(k_true) %in% idx_keep))
     if (large == T && length(idx_pred) > 150) {
       idx_pred <- idx_pred[sample(length(idx_pred), 150)]
