@@ -277,9 +277,7 @@ target_xi_base <- function(xi_tmp, eta, nu, S_n, y, stations, prior_xi_mean, pri
 
 # q_j(s_i) = eta_j + S_j(s_i), assembled per-observation. flat_idx[i] is the
 # position of observation i's (year, local-station) pair within
-# unlist(S_n_natural_list) -- precomputed ONCE by the caller (see
-# baseline-timevar.R), the same vectorization already used for W in
-# samplers-timevar.R's make_q_vector.
+# unlist(S_n_natural_list)
 make_q_vector_base <- function(idx_years, eta, S_n_natural_list, flat_idx) {
   eta[idx_years] + unlist(S_n_natural_list, use.names = FALSE)[flat_idx]
 }
