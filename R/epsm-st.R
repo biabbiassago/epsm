@@ -13,7 +13,7 @@
 #'   \item \eqn{S(s) = \sigma_S\,\omega(s)},
 #'     \eqn{\omega \mid \rho_S \sim GP(0, R(\cdot;\rho_S))}: shared,
 #'     time-invariant field; enters the point process through
-#'     \eqn{\beta\,\omega(s)} exactly as in [epsm_mcmc()].
+#'     \eqn{\beta\,\omega(s)} as in [epsm_mcmc()].
 #'   \item \eqn{W_j(s) = \sigma_W\,\omega_{W,j}(s)},
 #'     \eqn{\omega_{W,t} \mid \rho_W \overset{iid}{\sim}
 #'     GP(0, R(\cdot;\rho_W))} independently across periods, defined only at
@@ -26,19 +26,11 @@
 #' in the paper.
 #'
 #' @section Sampler:
-#' Each iteration: (1) \eqn{\lambda^*}; (2) thinned locations; (3) elliptical
-#' slice updates of \eqn{(\eta_t, \omega)}, cycling over periods with
-#' \eqn{W} held fixed; (4) per period: adaptive MH for \eqn{\nu_t}, then
-#' elliptical slice for \eqn{\omega_{W,t}}; (5) adaptive MH for \eqn{\xi};
-#' (6) MH for \eqn{\sigma^2_W} and \eqn{\rho_W}; (7) adaptive MH for
-#' \eqn{\sigma^2_S}, \eqn{\rho_S}; (8) \eqn{\beta}; (9) optional kriging of
-#' \eqn{S}. Kriging of \eqn{W_t} is not currently performed.
+#' TO DO 
 #'
 #' @inheritParams epsm_mcmc
 #' @param years Vector of length \eqn{N} giving the time period of each
-#'   observation. Should be supplied for this model: with `NULL`, all data
-#'   form a single period and \eqn{W} is not separately identifiable from
-#'   \eqn{S}. Periods are indexed in order of first appearance.
+#'   observation. Periods are indexed in order of first appearance.
 #' @param initial_values Optional named list of starting values. Accepts
 #'   every element listed in [epsm_mcmc()], plus:
 #'   \describe{
@@ -163,7 +155,7 @@ epsm_st_mcmc <- function(
   flat_idx <- year_offsets[idx_years] + stn_idx_in_year
   # ------------------------------------------------------------
   # initialize chains -- initial_values$<name>, when supplied, overrides the
-  # default random initialisation for that piece of state (same convention
+  # default random initialisation (same convention
   # as epsm.R).
   # ------------------------------------------------------------
   if (is.null(initial_values$lambda_star)) {
@@ -230,18 +222,16 @@ epsm_st_mcmc <- function(
 
   dist_all_coords <- fields::rdist(all_coords)
 
-  ## omega is the persistent latent state (partially whitened field:
+  ## omega is such that 
   ## S(s) = sqrt(sigma2_S) * omega(s), with omega(.) | rho_S ~
-  ## GP(0, R(.; rho_S)), unit sill). S_k / S_n are reconstructed from omega
+  ## GP(0, R(.; rho_S))). S_k / S_n are reconstructed from omega
   ## whenever the natural-scale field is actually needed.
   R_S <- exp_cor(dist_all_coords, range = 0.5)
   omega_k <-
     as.numeric(t(FastGP::rcpp_rmvnorm(1, S = R_S, mu = rep(0, nrow(R_S)))))
 
   # If an initial S_n (natural scale, at the observed stations) is supplied,
-  # convert it into the whitened representation so it actually persists into
-  # the first sweep -- omega_k, not S_n, is the state the chain carries
-  # forward.
+  # convert it
   if (!is.null(initial_values$S_n)) {
     omega_k[1:littlen] <- initial_values$S_n / sqrt(sigma2_S[1])
   }
@@ -249,8 +239,7 @@ epsm_st_mcmc <- function(
   S_n <- matrix(NA, nrow = littlen, ncol = nsims)
   S_n[, 1] <- sqrt(sigma2_S[1]) * omega_k[1:littlen]
 
-  # Random effects W (year-specific, additive, never enters the point
-  # process). Unaffected by whitening S -- unchanged from before.
+  # Random effects W 
   if (is.null(initial_values$sigma2_W)) {
     sigma2_W <- c(runif(1, 0.1, 3))
   } else {
@@ -281,11 +270,7 @@ epsm_st_mcmc <- function(
   })
   names(sizes_per_year) <- unique(years)
 
-  # omega_W is the persistent, per-year whitened state:
-  # W_j(s) = sqrt(sigma2_W) * omega_W_j(s), with omega_W_j(.) | rho_W ~
-  # GP(0, R_j(rho_W)) (unit sill). W_n (below) is the natural-scale
-  # reconstruction, kept for storage/output and for nu/xi's likelihoods --
-  # exactly mirroring how S_n is derived from omega_k.
+  # omega_W 
   omega_W <- vector("list", length(sizes_per_year))
   names(omega_W) <- unique(years)
   for (yr in seq_along(sizes_per_year)) {
@@ -307,7 +292,7 @@ epsm_st_mcmc <- function(
   names(W_n) <- unique(years)
   R_W <- list()
 
-  # Random effects on the range: not implemented, unchanged from before.
+  # Random effects on the range not implemented
   if (varying_range == T) {
     stop("Not implemented yet")
   } else {
@@ -350,9 +335,7 @@ epsm_st_mcmc <- function(
         area_B = 1
       )
 
-    # Step 2: Simulate Discarded Locations. Works entirely on the
-    # correlation (omega) scale -- sigma2_S never enters the augmentation or
-    # thinning step under partial whitening.
+    # Step 2: Simulate Discarded Locations. 
     all_coords_prev <- all_coords
     all_coords_tmp <-
       sample_all_coords(
@@ -374,19 +357,10 @@ epsm_st_mcmc <- function(
       k[i] <- littlen
     }
 
-    # Build the field's correlation matrix and factorise it ONCE per sweep.
-    # The same factor is shared by the joint (eta, omega) elliptical slice
-    # update and the rho_S update; sigma2_S no longer needs it at all. This
-    # also removes the previous R_S / R_S_inv / chol2inv recomputation,
-    # which was only ever needed by the old centred sampler.
+    # Build the field's correlation matrix and factorise it once per iter.
     chol_R_S <- chol_field_factor(all_coords, rho_S[i - 1])
 
-    # Step 3: joint elliptical slice update of (eta_j, omega), cycling
-    # through years within this sweep rather than bundling all n_years
-    # eta's into one shared ellipse -- see samplers-timevar.R and
-    # CHANGES-timevar.md. W is held fixed at last sweep's value throughout;
-    # each year's update sees the field as left by the year before it in
-    # this same cycle.
+    # Step 3: joint elliptical slice update of (eta_j, omega)
     eta_cur_vec <- eta[, i - 1]
     omega_k_cur <- c(omega_k[1:littlen], omega_x_tilde)
     W_n_prev <- lapply(W_n, function(x) x[, i - 1])
@@ -420,10 +394,7 @@ epsm_st_mcmc <- function(
     eta[, i] <- eta_cur_vec
     omega_k <- omega_k_cur
 
-    # Natural-scale field for this sweep's remaining steps (nu, xi, W) and
-    # for storage, using sigma2_S as it stood BEFORE this sweep's sigma2_S
-    # update (sigma2_S[i] has not been drawn yet) -- mirrors exactly how the
-    # plain model's ESS step produces S_n[, i].
+    # Natural-scale field for this iter remaining steps
     S_k <- sqrt(sigma2_S[i - 1]) * omega_k
     S_n[, i] <- S_k[1:littlen]
 
@@ -434,7 +405,7 @@ epsm_st_mcmc <- function(
       stations_cur_year <- stations_yearly_index[[idx_pars]]
       S_n_cur <- S_n[stations_cur_year, i]
 
-      # Scale parameter nu (eta already updated above, jointly with omega)
+      # Scale parameter nu (eta already updated above)
       nu_tmp <-
         sample_nu_timevar(
           nu[idx_pars, i - 1],
@@ -459,11 +430,8 @@ epsm_st_mcmc <- function(
         stations_yearly_index[[idx_pars]],
       ])
       R_W[[idx_pars]] <- exp_cor(tmp_dist_coords, range = rho_W[i - 1])
-
-      # Whitened: omega_W[[idx_pars]] is the persistent unit-sill state,
-      # W_n[[idx_pars]][,i] is derived from it (using sigma2_W as it stood
-      # BEFORE this sweep's sigma2_W update, mirroring exactly how S_n is
-      # derived from omega_k earlier in the sweep).
+      
+      # Omega_W for the W_n   
       omega_W[[idx_pars]] <-
         sample_omega_W_ess_timevar(
           omega_W[[idx_pars]],
@@ -502,14 +470,7 @@ epsm_st_mcmc <- function(
     prev_prop_xi_var <- xi_tmp$prop_xi_var
 
     # Sample sigma2_W, rho_W (year-specific random effect's hyperparameters
-    # -- pooled across years). sigma2_W holds omega_W fixed, so only the
-    # bGEV likelihood enters (no GP-density term at all) -- an MH step now,
-    # not the old conjugate Gibbs step, which was an exact draw from the
-    # WRONG (centred) conditional. R_W_inv is jittered via the more robust
-    # Eigen factorisation used everywhere else in this codebase -- the old
-    # unjittered base-R chol() was a live numerical bug, independent of
-    # whitening, especially likely to bite on a small/clustered per-year
-    # station set under an unbalanced panel.
+    # -- shared across years)
     R_W_inv <- lapply(R_W, function(x) {
       Lx <- FastGP::rcppeigen_get_chol(x + diag(1e-8, nrow(x)))
       chol2inv(t(Lx))
@@ -539,11 +500,7 @@ epsm_st_mcmc <- function(
       W_n[[yr]][, i] <- sqrt(sigma2_W[i]) * omega_W[[yr]]
     }
 
-    # rho_W: holding omega_W fixed still blocks rho_W from the likelihood
-    # (omega_W's own prior is the only place rho_W appears), exactly like
-    # rho_S -- this conditional was ALREADY likelihood-free before
-    # whitening; whitening only removes the now-unneeded sigma2_W argument.
-    # Also now correctly handles an unbalanced panel (see samplers-timevar.R).
+    # rho_W
     rho_W_tmp <- sample_rho_base_timevar(
       rho_W[i - 1],
       R_W,
@@ -558,9 +515,6 @@ epsm_st_mcmc <- function(
     rho_W_acc_rate[i] <- rho_W_tmp$rho_W_acc
 
     # Step 5 : Level 3 spatial pars for the shared field S.
-    # sigma2_S: holds omega fixed, so only the bGEV likelihood enters -- no
-    # point-process term, no GP quadratic form. W is added back in via
-    # lik_y_bgev_timevar.
     sigma2_S_tmp <-
       sample_sigma2_S_timevar(
         sigma2_S[i - 1],
@@ -604,8 +558,7 @@ epsm_st_mcmc <- function(
       stop("not implemented")
     }
 
-    # Step 6: preferential parameter beta. sigma2_S no longer enters this
-    # step at all under partial whitening.
+    # Step 6: preferential parameter beta.
     beta_tmp <-
       sample_beta(
         beta[i - 1],
