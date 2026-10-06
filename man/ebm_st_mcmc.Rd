@@ -32,17 +32,14 @@ take values in \code{1:nrow(obs_coords)} and use every station at least once.}
 state; no burn-in or thinning is applied).}
 
 \item{years}{Vector of length \eqn{N} giving the time period of each
-observation. One \eqn{(\eta_t, \nu_t, S_t)} is estimated per unique
-value, indexed in order of first appearance. If \code{NULL}, all data form a
-single period (equivalent to \code{\link[=ebm_mcmc]{ebm_mcmc()}}).}
+observation.}
 
 \item{varying_range}{Logical. If \code{TRUE}, adds spatial random effects on
 the range. \strong{Not yet implemented}; \code{TRUE} raises an error. Default
 \code{FALSE}.}
 
 \item{pred_coords}{Ignored with a warning: kriging is \strong{not implemented}
-for this model. Krige the per-period fields in post-processing from
-\code{W_n}, \code{sigma2_W} and \code{rho_W}.}
+for this model.}
 
 \item{out_file_loc}{Character. File path for \code{\link[=saveRDS]{saveRDS()}} output; used
 only when \code{save = TRUE}.}
@@ -60,7 +57,7 @@ omitted is initialised at random. Recognised names:
 scale, ordered as \code{stations[years == t]}).}
 }
 If not supplied, each period's \eqn{\nu_t} starts near the log IQR of
-that period's data.}
+that period's data and \eqn{\eta_t} start at the median of the period's data}
 
 \item{priors}{Named list of prior hyperparameters (see \code{constants.R}).
 Required. Elements are assigned into the function environment, so names
@@ -95,9 +92,8 @@ summary of the priors used) and \code{stations}.}
 \description{
 Multi-period version of \code{\link[=ebm_mcmc]{ebm_mcmc()}}, and the non-preferential comparison
 model for \code{\link[=epsm_st_mcmc]{epsm_st_mcmc()}}. Each period has its own median, spread and
-spatial field; the shape and the field's hyperparameters are pooled
-across periods. There is no point process (no \eqn{\beta}, no
-\eqn{\lambda^*}).
+spatial field; the shape and the field's hyperparameters are shared
+across periods.
 }
 \section{Model}{
 
@@ -107,7 +103,7 @@ For observation \eqn{i} at station \eqn{s_i} in period \eqn{t_i}:
 with \eqn{S_t(s) = \sigma_S\,\omega_t(s)} and
 \eqn{\omega_t \mid \rho_S \overset{iid}{\sim} GP(0, R(\cdot;\rho_S))}
 independently across periods, each defined only at the stations observed
-in period \eqn{t} (unbalanced panels allowed). \eqn{\xi},
+in period \eqn{t} (unbalanced years allowed). \eqn{\xi},
 \eqn{\sigma^2_S} and \eqn{\rho_S} are shared by all periods.
 
 Unlike \code{\link[=epsm_st_mcmc]{epsm_st_mcmc()}} there is no time-invariant shared field: the
@@ -125,10 +121,8 @@ when the two fits are compared. Inside the code it is called \code{S}.
 
 \section{Sampler}{
 
-Each sweep, for each period \eqn{t}: joint elliptical slice update of
-\eqn{(\eta_t, \omega_t)}, then adaptive MH for \eqn{\nu_t} (per-period
-proposal tuning). Then, pooled over periods: adaptive MH for \eqn{\xi}
-and \eqn{\sigma^2_S}, and MH for \eqn{\rho_S}.
+Each iteration, for each period \eqn{t}: joint elliptical slice update of
+\eqn{(\eta_t, \omega_t)}.
 }
 
 \examples{
@@ -143,7 +137,7 @@ fit <- ebm_st_mcmc(
   y = y, obs_coords = obs_coords, stations = stations,
   nsims = 5000, years = years, priors = default_priors()
 )
-matplot(t(fit$eta), type = "l")
+
 }
 }
 \seealso{

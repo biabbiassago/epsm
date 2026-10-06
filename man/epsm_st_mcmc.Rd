@@ -21,7 +21,7 @@ epsm_st_mcmc(
 )
 }
 \arguments{
-\item{y}{Numeric vector of length \eqn{N}. Responses (block maxima/minima),
+\item{y}{Numeric vector of length \eqn{N}. Responses,
 one per station-period observation.}
 
 \item{obs_coords}{\eqn{n \times 2} numeric matrix of observed station
@@ -32,12 +32,10 @@ coordinates. Must lie inside \code{set_window}.}
 take values in \code{1:nrow(obs_coords)} and use every station at least once.}
 
 \item{nsims}{Integer. Number of MCMC iterations (including the initial
-state; no burn-in or thinning is applied).}
+burnin).}
 
 \item{years}{Vector of length \eqn{N} giving the time period of each
-observation. Should be supplied for this model: with \code{NULL}, all data
-form a single period and \eqn{W} is not separately identifiable from
-\eqn{S}. Periods are indexed in order of first appearance.}
+observation. Periods are indexed in order of first appearance.}
 
 \item{varying_range}{Logical. If \code{TRUE}, adds spatial random effects on
 the range. \strong{Not yet implemented}; \code{TRUE} raises an error. Default
@@ -107,7 +105,7 @@ For observation \eqn{i} at station \eqn{s_i} in period \eqn{k}:
 \item \eqn{S(s) = \sigma_S\,\omega(s)},
 \eqn{\omega \mid \rho_S \sim GP(0, R(\cdot;\rho_S))}: shared,
 time-invariant field; enters the point process through
-\eqn{\beta\,\omega(s)} exactly as in \code{\link[=epsm_mcmc]{epsm_mcmc()}}.
+\eqn{\beta\,\omega(s)} as in \code{\link[=epsm_mcmc]{epsm_mcmc()}}.
 \item \eqn{W_j(s) = \sigma_W\,\omega_{W,j}(s)},
 \eqn{\omega_{W,t} \mid \rho_W \overset{iid}{\sim}
     GP(0, R(\cdot;\rho_W))} independently across periods, defined only at
@@ -122,13 +120,7 @@ in the paper.
 
 \section{Sampler}{
 
-Each iteration: (1) \eqn{\lambda^*}; (2) thinned locations; (3) elliptical
-slice updates of \eqn{(\eta_t, \omega)}, cycling over periods with
-\eqn{W} held fixed; (4) per period: adaptive MH for \eqn{\nu_t}, then
-elliptical slice for \eqn{\omega_{W,t}}; (5) adaptive MH for \eqn{\xi};
-(6) MH for \eqn{\sigma^2_W} and \eqn{\rho_W}; (7) adaptive MH for
-\eqn{\sigma^2_S}, \eqn{\rho_S}; (8) \eqn{\beta}; (9) optional kriging of
-\eqn{S}. Kriging of \eqn{W_t} is not currently performed.
+TO DO
 }
 
 \examples{

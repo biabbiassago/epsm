@@ -21,7 +21,7 @@ epsm_mcmc(
 )
 }
 \arguments{
-\item{y}{Numeric vector of length \eqn{N}. Responses (block maxima/minima),
+\item{y}{Numeric vector of length \eqn{N}. Responses,
 one per station-period observation.}
 
 \item{obs_coords}{\eqn{n \times 2} numeric matrix of observed station
@@ -32,7 +32,7 @@ coordinates. Must lie inside \code{set_window}.}
 take values in \code{1:nrow(obs_coords)} and use every station at least once.}
 
 \item{nsims}{Integer. Number of MCMC iterations (including the initial
-state; no burn-in or thinning is applied).}
+burnin).}
 
 \item{years}{Optional vector of length \eqn{N} giving the time period of
 each observation. If \code{NULL}, all observations are treated as one period
@@ -57,8 +57,8 @@ to the unit square \eqn{[0,1]^2}. Note: the \eqn{\lambda^*} update
 currently assumes a window of area 1.}
 
 \item{initial_values}{Optional named list of starting values; any element
-omitted (or \code{initial_values = NULL}) is initialised at random.
-Recognised names:
+omitted (or \code{initial_values = NULL}) is initialized at random.
+Recognized names:
 \describe{
 \item{\code{lambda_star}}{Scalar, Point process intensity.}
 \item{\code{beta}}{Scalar, preferential-sampling coefficient.}
@@ -124,8 +124,8 @@ where the bGEV is parameterised by median (location), spread (scale, on
 the log scale \eqn{\nu}) and shape \eqn{\xi}. The field is decomposed as
 \eqn{S(s) = \sigma_S\,\omega(s)} with
 \eqn{\omega \mid \rho_S \sim GP(0, R(\cdot;\rho_S))} (exponential
-correlation, unit sill). Observed locations are the retained points of a
-thinned Poisson process on \code{set_window} with dominating intensity
+correlation). Observed locations are the retained points of a
+thinned Poisson process on \code{set_window} with intensity
 \eqn{\lambda^*}; the retention probability depends on
 \eqn{\beta\,\omega(s)}, so \eqn{\beta} measures the strength of
 preferential sampling (\eqn{\beta = 0}: no preferential sampling).
@@ -138,12 +138,7 @@ main manuscript.
 
 \section{Sampler}{
 
-Each iteeration: (1) Gibbs update of \eqn{\lambda^*}; (2) simulate the
-thinned-out (unobserved) locations; (3) joint elliptical slice update of
-\eqn{(\eta, \omega)}; (4) adaptive MH for \eqn{\nu} (per period) and
-\eqn{\xi}; (5) adaptive MH for \eqn{\sigma^2_S} and \eqn{\rho_S};
-(6) adaptive MH for \eqn{\beta}; (7) optional kriging of \eqn{S} to
-\code{pred_coords}.
+TODO
 }
 
 \examples{
