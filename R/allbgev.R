@@ -35,10 +35,10 @@
 # GEV building blocks (vectorised over all arguments)
 # ---------------------------------------------------------------------------
 
-# NOTE: all arguments are recycled to a common length first. ifelse()
+# NOTE: all arguments are made to a common length first. ifelse()
 # returns a result the length of its *test* (xi == 0), so in the original
 # code a scalar xi (e.g. the 0 passed for the Gumbel component) with a
-# vector x silently returned a single value, recycled.
+# vector x silently returned a single value
 pgev <- function(x, mu, sigma, xi) {
   n <- max(length(x), length(mu), length(sigma), length(xi))
   xi <- rep_len(xi, n)
@@ -94,8 +94,7 @@ return_level_gev <- function(period, mu, sigma, xi) {
 }
 
 # Simulate N iid GEV (NOT bGEV) draws from (q, s, xi) parameters. Used by the
-# simulation functions in sim-data.R. Formerly in reparametrized_gev.R, where
-# rep2gev() did the conversion; it is identical to new.to.old().
+# simulation functions in sim-data.R. 
 # Uses SpatialExtremes::rgev when installed (so seeds reproduce the original  simulations), otherwise this file's rgev().
 rgevrep <- function(N, q, s, xi, a = 0.5, b = 0.5) {
   p <- new.to.old(c(q, s, xi), alpha = a, beta = b)
@@ -175,7 +174,7 @@ old.to.new <- function(par, alpha = 0.5, beta = 0.5) {
 
 # ---------------------------------------------------------------------------
 # bGEV: distribution, quantile, density, random generation
-# (original versions; arguments are recycled with fix_lengths())
+# (original versions; arguments use fix_lengths())
 # ---------------------------------------------------------------------------
 
 pbgev <- function(x, mu, sigma, xi, p_a = .1, p_b = .2, s = 5) {
@@ -340,9 +339,7 @@ rbgev2 <- function(n, q, sb, xi) {
   qbgev_vec(u, tmp$mu, tmp$sigma, tmp$xi)
 }
 
-# Vectorised quantile function. Fixed relative to the original, which
-# overwrote the whole result in each branch (so it was only correct when
-# every p fell in the same region).
+# Vectorised quantile function
 qbgev_vec <- function(p, mu, sigma, xi,
                       p_a = rep(.1, length(p)), p_b = rep(.2, length(p)),
                       s = rep(5, length(p))) {
@@ -456,7 +453,7 @@ fix_lengths <- function(...) {
 
 
 # ---------------------------------------------------------------------------
-# Backward-compatible names. These duplicate functions above but are kept so
+# hese duplicate functions above but are kept so
 # existing scripts that call them keep working.
 # ---------------------------------------------------------------------------
 
