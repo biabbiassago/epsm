@@ -28,11 +28,7 @@ logdet_chol <- function(L) {
   return(2 * sum(log(diag(L))))
 }
 
-#### Joint elliptical slice sampler for (eta, omega) -- shared by both
-#### variants: called once per iteration in baseline.R (single eta/omega),
-#### and once PER YEAR in baseline-timevar.R (each year's own eta_j/
-#### omega_j, completely independent of every other year's, since there
-#### is no field shared across years here).
+#### Joint elliptical slice sampler for (eta, omega)
 lik_eta_omega_base <- function(eta, omega, sigma2_S, nu, xi, y, stations) {
   S_natural <- sqrt(sigma2_S) * omega
   q <- eta + S_natural[stations]
@@ -276,13 +272,7 @@ target_xi_base <- function(xi_tmp, eta, nu, S_n, y, stations, prior_xi_mean, pri
 }
 
 # ===========================================================================
-# Per-year (baseline-timevar.R) versions of sigma2_S, rho_S, and xi -- pooled
-# across years, each year having its OWN independent omega_j but sharing
-# sigma2_S/rho_S/xi. Structurally identical to sample_sigma2_W_timevar /
-# rho_mh_logratio_timevar / sample_xi_timevar in samplers-timevar.R, minus
-# the separate W term (S_j(s) IS the whole spatial term here, nothing added
-# on top of it), and duplicated here (rather than sourced) to keep this file
-# fully self-contained.
+# Per-year (baseline-timevar.R) versions of sigma2_S, rho_S, and xi
 # ===========================================================================
 
 # q_j(s_i) = eta_j + S_j(s_i), assembled per-observation. flat_idx[i] is the
@@ -342,12 +332,7 @@ sample_sigma2_S_base_timevar <- function(
   ))
 }
 
-# omega_cur_list: list of per-year WHITENED fields (unit sill). Both the
-# log-determinant and the quadratic form are summed over each year's OWN,
-# correctly-sized correlation matrix (supports an unbalanced panel), and the
-# quadratic form is recomputed against R(rho_prop)^{-1} as well as
-# R(rho_cur)^{-1} -- see CHANGES-timevar.md's account of the equivalent
-# rho_W bug for why both of these matter.
+# omega_cur_list
 rho_mh_logratio_base_timevar <- function(
     rho_cur, R_cur, R_cur_inv, rho_prop, omega_cur_list,
     rho_prior_a, rho_prior_b, coords_cur, stations_yearly_index) {
