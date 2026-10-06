@@ -235,9 +235,7 @@ lik_eta_omega_timevar <-
     return(t1 + t2)
   }
 
-# bGEV part of the likelihood only (no point-process term), W held fixed and
-# added back in via make_q_vector. Used by sample_sigma2_S, which never
-# touches the point process under partial whitening.
+# bGEV part of the likelihood only (no point-process term)
 lik_y_bgev_timevar <- function(
     S_vals,
     eta,
