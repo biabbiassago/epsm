@@ -7,7 +7,7 @@ get_prop_var <- function(
     default_var,
     full_acc_rate,
     max_high,
-    target = 0.44,
+    target = 0.40,
     window = 200) {
   if (is.null(iter)) {
     return(default_var)
