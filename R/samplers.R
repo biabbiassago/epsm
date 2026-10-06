@@ -41,10 +41,7 @@ sample_all_coords <-
     # R22 - R21 R11^{-1} R12. Neither R11^{-1} nor the conditional covariance
     # is ever formed.
     #
-    # Everything here is on the correlation (omega) scale throughout: under
-    # partial whitening sigma2_S never enters the kriging weights, the
-    # kriging covariance, or the thinning probabilities, so unlike the old
-    # code there is no rescale-to-S-then-divide-back-out round trip.
+    # Everything here is on the correlation (omega) scale 
     big_coords <- rbind(all_coords_prev, coords_pp)
     R_full <- exp_cor(fields::rdist(big_coords), range = rho_S) +
       diag(1e-6, k + k_star)
@@ -74,21 +71,6 @@ sample_all_coords <-
 
 #### Cholesky helpers ####
 
-# The field updates need three things from the correlation matrix R: draws from
-# N(0, R) (or N(0, sigma2 * R) pre-whitening), quadratic forms x' R^{-1} y,
-# and log|R|. All three come from a single LOWER-triangular Cholesky factor L
-# with R = L %*% t(L), via triangular solves. Forming R^{-1} explicitly --
-# chol2inv() or rcppeigen_invert_matrix() -- is a second O(k^3) operation on
-# top of the factorisation and is never necessary.
-#
-# Use Eigen's factorisation, not base chol(). This R build links against the
-# reference LAPACK (libRlapack) rather than an optimised BLAS, and at k = 600
-# base chol() takes ~31 ms against ~3.3 ms for rcppeigen_get_chol -- a factor
-# of 9. Counting O(k^3) operations is only meaningful if they all cost the same,
-# and here they do not.
-#
-# rcppeigen_get_chol() returns the lower factor directly, so no transpose is
-# needed either here or when forming sqrt(sigma2) * L for the ellipse draws.
 chol_field_factor <- function(coords, rho, jitter = 1e-6) {
   R <- exp_cor(fields::rdist(coords), range = rho) +
     diag(jitter, nrow(as.matrix(coords)))
@@ -120,18 +102,11 @@ logdet_chol <- function(L) {
 
 ### Spatial field + eta: joint elliptical slice sampler ####
 #
-# eta (one value per year) and omega(.) (the whitened field) are a priori
-# independent, so their joint prior is block-diagonal:
+# eta (one value per year) and omega(.) 
 #
 #   (eta - prior_eta_mean, omega(K)) ~ N(0, blockdiag(prior_eta_var * I_J, R(rho_S)))
 #
-# and q(s) = eta + sqrt(sigma2_S) * omega(s) never separates them in the
-# likelihood. Updating them on a single ellipse (rather than alternating an
-# eta-MH step against a field-only ESS step) is what removes the slow
-# alternating-conditional mixing on the eta-vs-field-level ridge; see
-# CHANGES.md for the derivation. beta, sigma2_S, rho_S, nu, xi are all held
-# fixed for the duration of this step, exactly as they were for the old
-# field-only ESS.
+# and q(s) = eta + sqrt(sigma2_S) * omega(s)
 sample_eta_S_ess <- function(
     eta_cur,
     omega_n_cur,
@@ -164,9 +139,6 @@ sample_eta_S_ess <- function(
     )
   }
 
-  # Work with eta centred at its prior mean so the whole joint state has a
-  # zero-mean prior, as ESS requires. Re-added when evaluating the likelihood
-  # and when returning the result.
   sd_eta <- sqrt(prior_eta_var)
   state_cur <- c(eta_cur - prior_eta_mean, omega_k_cur)
 
@@ -190,11 +162,7 @@ sample_eta_S_ess <- function(
 
   lik_cur <- lik_of(state_cur)
 
-  # Several elliptical-slice passes cost one O(k^2) matrix-vector product
-  # each (reusing chol_R), rather than a fresh O(k^3) factorisation, so
-  # multiple passes per sweep are cheap. A single pass rotates the field only
-  # a small amount, so one pass per sweep leaves both eta and the field
-  # badly autocorrelated.
+  # Perform multiple passes of the ESS
   for (pass in seq_len(n_ess_passes)) {
     eps_eta <- rnorm(n_years, 0, sd_eta)
     eps_omega <- as.vector(chol_R %*% rnorm(k_new))
@@ -393,7 +361,7 @@ target_xi <-
 
 #### Spatial Hyper-parameters Part ####
 
-# sigma2_S under partial whitening: omega_k is held fixed, so neither the
+# sigma2_S : omega_k is held fixed, so neither the
 # GP-density term nor the point-process term (both parameter-free in
 # sigma2_S once omega is factored out) enter this ratio -- only the bGEV
 # likelihood does.
@@ -444,11 +412,7 @@ sample_sigma2_S <-
     ))
   }
 
-# rho_S under partial whitening: holding omega_k fixed still blocks rho_S
-# from the likelihood (omega's own prior is the only place rho_S appears),
-# exactly as holding S_j fixed did in the fully centred sampler. So this
-# conditional is unchanged in form. sigma2 is fixed at 1 throughout since.
-# omega has the variance taken out.
+# rho_S 
 sample_rho_S <-
   function(
       rho_cur,
@@ -505,9 +469,6 @@ rho_mh_logratio <-
       rho_prior_b,
       coords_cur,
       chol_R_cur = NULL) {
-    # One factorisation of the proposal's correlation matrix supplies both the
-    # log-determinant and the quadratic form, and the current state's factor is
-    # reused from the caller.
     U_prop <- chol_field_factor(coords_cur, rho_prop)
     if (is.null(chol_R_cur)) {
       chol_R_cur <- chol_field_factor(coords_cur, rho_cur)
@@ -526,10 +487,10 @@ rho_mh_logratio <-
     return(term1 + term2 + term3)
   }
 
-#### Preferential Parameter Part ####
+#### Preferential Parameter Part (beta)####
 
-# beta under partial whitening: only the point-process term ever involves
-# beta, and that term is now sigma2_S-free (beta * omega, not
+# beta : only the point-process term ever involves
+# beta, and that term is sigma2_S-free (beta * omega, not
 # (beta / sqrt(sigma2_S)) * S), so sigma2_S no longer enters this step at all.
 sample_beta <-
   function(
