@@ -2,9 +2,8 @@
 #'
 #' Multi-period version of [ebm_mcmc()], and the non-preferential comparison
 #' model for [epsm_st_mcmc()]. Each period has its own median, spread and
-#' spatial field; the shape and the field's hyperparameters are pooled
-#' across periods. There is no point process (no \eqn{\beta}, no
-#' \eqn{\lambda^*}).
+#' spatial field; the shape and the field's hyperparameters are shared
+#' across periods. 
 #'
 #' @section Model:
 #' For observation \eqn{i} at station \eqn{s_i} in period \eqn{t_i}:
@@ -13,7 +12,7 @@
 #' with \eqn{S_t(s) = \sigma_S\,\omega_t(s)} and
 #' \eqn{\omega_t \mid \rho_S \overset{iid}{\sim} GP(0, R(\cdot;\rho_S))}
 #' independently across periods, each defined only at the stations observed
-#' in period \eqn{t} (unbalanced panels allowed). \eqn{\xi},
+#' in period \eqn{t} (unbalanced years allowed). \eqn{\xi},
 #' \eqn{\sigma^2_S} and \eqn{\rho_S} are shared by all periods.
 #'
 #' Unlike [epsm_st_mcmc()] there is no time-invariant shared field: the
@@ -27,19 +26,14 @@
 #' \eqn{\sigma^2_S \sim IG}, \eqn{\rho_S \sim \mathrm{Gamma}}.
 #'
 #' @section Sampler:
-#' Each sweep, for each period \eqn{t}: joint elliptical slice update of
-#' \eqn{(\eta_t, \omega_t)}, then adaptive MH for \eqn{\nu_t} (per-period
-#' proposal tuning). Then, pooled over periods: adaptive MH for \eqn{\xi}
-#' and \eqn{\sigma^2_S}, and MH for \eqn{\rho_S}.
+#' Each iteration, for each period \eqn{t}: joint elliptical slice update of
+#' \eqn{(\eta_t, \omega_t)}.
 #'
 #' @inheritParams ebm_mcmc
 #' @param years Vector of length \eqn{N} giving the time period of each
-#'   observation. One \eqn{(\eta_t, \nu_t, S_t)} is estimated per unique
-#'   value, indexed in order of first appearance. If `NULL`, all data form a
-#'   single period (equivalent to [ebm_mcmc()]).
+#'   observation.
 #' @param pred_coords Ignored with a warning: kriging is **not implemented**
-#'   for this model. Krige the per-period fields in post-processing from
-#'   `W_n`, `sigma2_W` and `rho_W`.
+#'   for this model.
 #' @param initial_values Optional named list of starting values; any element
 #'   omitted is initialised at random. Recognised names:
 #'   \describe{
@@ -50,7 +44,7 @@
 #'       scale, ordered as `stations[years == t]`).}
 #'   }
 #'   If not supplied, each period's \eqn{\nu_t} starts near the log IQR of
-#'   that period's data.
+#'   that period's data and \eqn{\eta_t} start at the median of the period's data
 #'
 #' @return A list of posterior samples (columns / elements index iterations):
 #'   \describe{
@@ -83,7 +77,7 @@
 #'   y = y, obs_coords = obs_coords, stations = stations,
 #'   nsims = 5000, years = years, priors = default_priors()
 #' )
-#' matplot(t(fit$eta), type = "l")
+#'
 #' }
 ebm_st_mcmc <-
   function(y,
@@ -274,10 +268,7 @@ ebm_st_mcmc <-
         )
 
         # Step 1 (per year): joint elliptical slice update of (eta_j,
-        # omega_j). Completely independent of every other year's block,
-        # given sigma2_S/rho_S -- there is no field shared across years to
-        # carry forward here, unlike the preferential timevar model's
-        # per-year cycling.
+        # omega_j).
         ess_tmp <-
           sample_eta_S_ess_base(
             eta_cur = eta_cur_vec[j],
@@ -296,11 +287,10 @@ ebm_st_mcmc <-
         eta_cur_vec[j] <- ess_tmp$eta
         omega[[j]] <- ess_tmp$omega
 
-        # Natural-scale field for this year, using sigma2_S as it stood
-        # BEFORE this sweep's sigma2_S update.
+        # Natural-scale field for this year, using sigma2_S 
         S_n[[j]][, i] <- sqrt(sigma2_S[i - 1]) * omega[[j]]
 
-        # Scale parameter nu_j (own adaptive-proposal state per year).
+        # Scale parameter nu_j
         nu_tmp <-
           sample_nu_base(
             nu[j, i - 1],
@@ -320,7 +310,7 @@ ebm_st_mcmc <-
       }
       eta[, i] <- eta_cur_vec
 
-      # Shape parameter xi: pooled across all years.
+      # Shape parameter xi: shared across all years.
       xi_tmp <-
         sample_xi_base_timevar(
           xi[i - 1],
@@ -340,7 +330,7 @@ ebm_st_mcmc <-
       xi_acc_rate[i] <- xi_tmp$xi_acc
       prev_prop_xi_var <- xi_tmp$prop_xi_var
 
-      # sigma2_S: pooled across years, holds every omega_j fixed, so only
+      # sigma2_S:  holds every omega_j fixed, so only
       # the bGEV likelihood enters.
       sigma2_S_tmp <-
         sample_sigma2_S_base_timevar(
@@ -366,9 +356,7 @@ ebm_st_mcmc <-
         S_n[[yr]][, i] <- sqrt(sigma2_S[i]) * omega[[yr]]
       }
 
-      # rho_S: pooled across years, holding every omega_j fixed still
-      # blocks rho_S from the likelihood entirely. Correctly handles an
-      # unbalanced panel (each year's own correlation matrix).
+      # rho_S
       R_S_inv <- lapply(R_S, function(x) {
         Lx <- FastGP::rcppeigen_get_chol(x + diag(1e-8, nrow(x)))
         chol2inv(t(Lx))
